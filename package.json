@@ -1,0 +1,28 @@
+{
+  "name": "pomelo2-creator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "pomelo.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aslijia/pomelo2-creator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aslijia/pomelo2-creator/issues"
+  },
+  "homepage": "https://github.com/Aslijia/pomelo2-creator#readme",
+  "dependencies": {
+    "eventemitter3": "^3.1.0",
+    "is": "^3.3.0"
+  },
+  "types": "./types/pomelo.d.ts"
+}
