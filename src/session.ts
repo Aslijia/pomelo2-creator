@@ -275,7 +275,7 @@ export class Session extends EventEmitter {
             this.id = msg.sys.id;
         }
 
-        this.dict = msg.sys.dict;
+        this.dict = msg.sys.dict || {};
         const protos = msg.sys.protos;
         //Init compress dict
         if (this.dict) {
@@ -357,7 +357,7 @@ export class Session extends EventEmitter {
         else {
             msg = Protocol.strencode(JSON.stringify(msg));
         }
-        return Protocol.Message.encode(reqId, reqId ? Protocol.MessageType.TYPE_REQUEST : Protocol.MessageType.TYPE_NOTIFY, this.dict[route], this.dict[route], msg, false);
+        return Protocol.Message.encode(reqId, reqId ? Protocol.MessageType.TYPE_REQUEST : Protocol.MessageType.TYPE_NOTIFY, !!this.dict[route], this.dict[route] ? this.dict[route] : route, msg, false);
     }
 
     private _decode(buffer: Uint8Array) {
