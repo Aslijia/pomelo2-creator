@@ -1,28 +1,26 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var Protobuf;
-(function (Protobuf) {
-    function init(opts) {
+export namespace Protobuf {
+
+    export function init(opts: any) {
         //On the serverside, use serverProtos to encode messages send to client
         MsgEncoder.init(opts.encoderProtos);
         //On the serverside, user clientProtos to decode messages receive from clients
         MsgDecoder.init(opts.decoderProtos);
     }
-    Protobuf.init = init;
-    function encode(key, msg) {
+
+    export function encode(key: string, msg: any) {
         return MsgEncoder.encode(key, msg);
     }
-    Protobuf.encode = encode;
-    function decode(key, msg) {
+
+    export function decode(key: string, msg: Uint8Array) {
         return MsgDecoder.decode(key, msg);
     }
-    Protobuf.decode = decode;
+
     /**
      * constants
      */
-    let constants;
-    (function (constants) {
-        constants.TYPES = {
+    export namespace constants {
+
+        export const TYPES: any = {
             uInt32: 0,
             sInt32: 0,
             int32: 0,
@@ -33,8 +31,9 @@ var Protobuf;
             boolean: 6,
             object: 7
         };
-    })(constants = Protobuf.constants || (Protobuf.constants = {}));
-    function isSimpleType(type) {
+    }
+
+    function isSimpleType(type: string) {
         return (type === 'uInt32' ||
             type === 'sInt32' ||
             type === 'int32' ||
@@ -45,22 +44,23 @@ var Protobuf;
             type === 'boolean' ||
             type === 'object');
     }
+
     /**
      * codec module
      */
-    let Codec;
-    (function (Codec) {
+    export namespace Codec {
         const buffer = new ArrayBuffer(8);
         const float32Array = new Float32Array(buffer);
         const float64Array = new Float64Array(buffer);
         const uInt8Array = new Uint8Array(buffer);
-        function encodeBytes(n) {
+        export function encodeBytes(n: number) {
         }
-        Codec.encodeBytes = encodeBytes;
-        function encodeUInt32(n) {
+
+        export function encodeUInt32(n: number) {
             if (isNaN(n) || n < 0) {
                 return Uint8Array.from([]);
             }
+
             const result = [];
             do {
                 let tmp = n % 128;
@@ -73,16 +73,16 @@ var Protobuf;
             } while (n !== 0);
             return Uint8Array.from(result);
         }
-        Codec.encodeUInt32 = encodeUInt32;
-        function encodeSInt32(n) {
+
+        export function encodeSInt32(n: number) {
             if (isNaN(n)) {
                 return Uint8Array.from([]);
             }
             n = n < 0 ? (Math.abs(n) * 2 - 1) : n * 2;
             return Codec.encodeUInt32(n);
         }
-        Codec.encodeSInt32 = encodeSInt32;
-        function decodeUInt32(bytes) {
+
+        export function decodeUInt32(bytes: Uint8Array) {
             let n = 0;
             for (let i = 0; i < bytes.length; i++) {
                 let m = bytes[i];
@@ -93,20 +93,20 @@ var Protobuf;
             }
             return n;
         }
-        Codec.decodeUInt32 = decodeUInt32;
-        function decodeSInt32(bytes) {
+
+        export function decodeSInt32(bytes: Uint8Array) {
             let n = decodeUInt32(bytes);
             let flag = ((n % 2) === 1) ? -1 : 1;
             n = ((n % 2 + n) / 2) * flag;
             return n;
         }
-        Codec.decodeSInt32 = decodeSInt32;
-        function encodeFloat(float) {
+
+        export function encodeFloat(float: number) {
             float32Array[0] = float;
             return uInt8Array;
         }
-        Codec.encodeFloat = encodeFloat;
-        function decodeFloat(bytes, offset) {
+
+        export function decodeFloat(bytes: Uint8Array, offset: number) {
             if (!bytes || bytes.length < (offset + 4)) {
                 return null;
             }
@@ -115,13 +115,13 @@ var Protobuf;
             }
             return float32Array[0];
         }
-        Codec.decodeFloat = decodeFloat;
-        function encodeDouble(double) {
+
+        export function encodeDouble(double: number) {
             float64Array[0] = double;
             return uInt8Array.subarray(0, 8);
         }
-        Codec.encodeDouble = encodeDouble;
-        function decodeDouble(bytes, offset) {
+
+        export function decodeDouble(bytes: Uint8Array, offset: number) {
             if (!bytes || bytes.length < (offset + 8)) {
                 return null;
             }
@@ -130,8 +130,8 @@ var Protobuf;
             }
             return float64Array[0];
         }
-        Codec.decodeDouble = decodeDouble;
-        function encodeStr(bytes, offset, str) {
+
+        export function encodeStr(bytes: Uint8Array, offset: number, str: string) {
             for (let i = 0; i < str.length; i++) {
                 const code = str.charCodeAt(i);
                 const codes = encode2UTF8(code);
@@ -142,11 +142,11 @@ var Protobuf;
             }
             return offset;
         }
-        Codec.encodeStr = encodeStr;
+
         /**
          * Decode string from utf8 bytes
          */
-        function decodeStr(bytes, offset, length) {
+        export function decodeStr(bytes: Uint8Array, offset: number, length: number) {
             const array = [];
             const end = offset + length;
             while (offset < end) {
@@ -172,11 +172,11 @@ var Protobuf;
             }
             return str;
         }
-        Codec.decodeStr = decodeStr;
+
         /**
          * Return the byte length of the str use utf8
          */
-        function byteLength(str) {
+        export function byteLength(str: string) {
             if (typeof (str) !== 'string') {
                 return -1;
             }
@@ -187,11 +187,11 @@ var Protobuf;
             }
             return length;
         }
-        Codec.byteLength = byteLength;
+
         /**
          * Encode a unicode16 char code to utf8 bytes
          */
-        function encode2UTF8(charCode) {
+        function encode2UTF8(charCode: number) {
             if (charCode <= 0x7f) {
                 return [charCode];
             }
@@ -202,7 +202,7 @@ var Protobuf;
                 return [0xe0 | (charCode >> 12), 0x80 | ((charCode & 0xfc0) >> 6), 0x80 | (charCode & 0x3f)];
             }
         }
-        function codeLength(code) {
+        function codeLength(code: number) {
             if (code <= 0x7f) {
                 return 1;
             }
@@ -213,19 +213,19 @@ var Protobuf;
                 return 3;
             }
         }
-    })(Codec = Protobuf.Codec || (Protobuf.Codec = {}));
-    ;
+    };
+
     /**
      * encoder module
      */
-    let MsgEncoder;
-    (function (MsgEncoder) {
-        let Protos = {};
-        function init(protos) {
+
+    export namespace MsgEncoder {
+        let Protos: any = {};
+        export function init(protos: object | undefined) {
             Protos = protos || {};
         }
-        MsgEncoder.init = init;
-        function encode(route, msg) {
+
+        export function encode(route: string, msg: Uint8Array) {
             //Get protos from protos map use the route as key
             const proto = Protos[route];
             //Check msg
@@ -246,14 +246,15 @@ var Protobuf;
             }
             return null;
         }
-        MsgEncoder.encode = encode;
+
         /**
          * Check if the msg follow the defination in the protos
          */
-        function checkMsg(msg, protos) {
+        function checkMsg(msg: any, protos: any) {
             if (!protos) {
                 return false;
             }
+
             for (let name in protos) {
                 const proto = protos[name];
                 //All required element must exist
@@ -287,7 +288,9 @@ var Protobuf;
             }
             return true;
         }
-        function encodeMsg(buffer, offset, protos, msg) {
+
+        function encodeMsg(buffer: Uint8Array, offset: number, protos: any, msg: any) {
+
             for (let name in msg) {
                 if (!!protos[name]) {
                     const proto = protos[name];
@@ -307,7 +310,8 @@ var Protobuf;
             }
             return offset;
         }
-        function encodeProp(value, type, offset, buffer, protos) {
+
+        function encodeProp(value: any, type: string, offset: number, buffer: Uint8Array, protos: any) {
             switch (type) {
                 case 'boolean':
                     offset = writeBytes(buffer, offset, Uint8Array.from(value ? [1] : [0]));
@@ -356,10 +360,11 @@ var Protobuf;
             }
             return offset;
         }
+
         /**
          * Encode reapeated properties, simple msg and object are decode differented
          */
-        function encodeArray(array, proto, offset, buffer, protos) {
+        function encodeArray(array: Uint8Array, proto: any, offset: number, buffer: Uint8Array, protos: object) {
             let i = 0;
             if (isSimpleType(proto.type)) {
                 offset = writeBytes(buffer, offset, encodeTag(proto.type, proto.tag));
@@ -376,37 +381,39 @@ var Protobuf;
             }
             return offset;
         }
-        function writeBytes(buffer, offset, bytes) {
-            for (let i = 0; i < bytes.length; i++, offset++) {
+
+        function writeBytes(buffer: Uint8Array, offset: number, bytes: Uint8Array) {
+            for (let i = 0; i < bytes.length; i++ , offset++) {
                 buffer[offset] = bytes[i];
             }
             return offset;
         }
-        function encodeTag(type, tag) {
+
+        function encodeTag(type: string, tag: number) {
             const value = constants.TYPES[type] || 2;
             return Codec.encodeUInt32((tag << 3) | value);
         }
-    })(MsgEncoder = Protobuf.MsgEncoder || (Protobuf.MsgEncoder = {}));
-    ;
+    };
+
     /**
      * decoder module
      */
-    let MsgDecoder;
-    (function (MsgDecoder) {
-        let buffer;
+    export namespace MsgDecoder {
+
+        let buffer: Uint8Array;
         let offset = 0;
-        let Protos = {};
-        function init(protos) {
+        let Protos: any = {};
+        export function init(protos?: object) {
             Protos = protos || {};
         }
-        MsgDecoder.init = init;
-        function setProtos(protos) {
+
+        export function setProtos(protos: object) {
             if (!!protos) {
                 Protos = protos;
             }
         }
-        MsgDecoder.setProtos = setProtos;
-        function decode(route, buf) {
+
+        export function decode(route: string, buf: Uint8Array) {
             const protos = Protos[route];
             buffer = buf;
             offset = 0;
@@ -415,8 +422,8 @@ var Protobuf;
             }
             return null;
         }
-        MsgDecoder.decode = decode;
-        function decodeMsg(msg, protos, length) {
+
+        function decodeMsg(msg: any, protos: any, length: number) {
             while (offset < length) {
                 const head = getHead();
                 const type = head.type;
@@ -440,7 +447,7 @@ var Protobuf;
         /**
          * Test if the given msg is finished
          */
-        function isFinish(msg, protos) {
+        function isFinish(msg: any, protos: any) {
             return (!protos.__tags[peekHead().tag]);
         }
         /**
@@ -463,7 +470,8 @@ var Protobuf;
                 tag: tag >> 3
             };
         }
-        function decodeProp(type, protos) {
+
+        function decodeProp(type: string, protos: any) {
             switch (type) {
                 case 'boolean':
                     const boolean = Codec.decodeStr(buffer, offset, 1);
@@ -502,7 +510,8 @@ var Protobuf;
                     break;
             }
         }
-        function decodeArray(array, type, protos) {
+
+        function decodeArray(array: any[], type: string, protos: object) {
             if (isSimpleType(type)) {
                 const length = Codec.decodeUInt32(getBytes());
                 for (let i = 0; i < length; i++) {
@@ -513,7 +522,8 @@ var Protobuf;
                 array.push(decodeProp(type, protos));
             }
         }
-        function getBytes(flag) {
+
+        function getBytes(flag?: boolean) {
             const bytes = [];
             let pos = offset;
             flag = flag || false;
@@ -528,9 +538,9 @@ var Protobuf;
             }
             return Uint8Array.from(bytes);
         }
+
         function peekBytes() {
             return getBytes(true);
         }
-    })(MsgDecoder = Protobuf.MsgDecoder || (Protobuf.MsgDecoder = {}));
-    ;
-})(Protobuf = exports.Protobuf || (exports.Protobuf = {}));
+    };
+}

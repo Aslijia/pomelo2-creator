@@ -1,28 +1,29 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var Protocol;
-(function (Protocol) {
+
+export namespace Protocol {
     const PKG_HEAD_BYTES = 4;
     const MSG_FLAG_BYTES = 1;
     const MSG_ROUTE_CODE_BYTES = 2;
     const MSG_ID_MAX_BYTES = 5;
     const MSG_ROUTE_LEN_BYTES = 1;
+
     const MSG_ROUTE_CODE_MAX = 0xffff;
+
     const MSG_COMPRESS_ROUTE_MASK = 0x1;
     const MSG_COMPRESS_GZIP_MASK = 0x1;
     const MSG_COMPRESS_GZIP_ENCODE_MASK = 1 << 4;
     const MSG_TYPE_MASK = 0x7;
-    let PackageType;
-    (function (PackageType) {
-        PackageType[PackageType["TYPE_HANDSHAKE"] = 1] = "TYPE_HANDSHAKE";
-        PackageType[PackageType["TYPE_HANDSHAKE_ACK"] = 2] = "TYPE_HANDSHAKE_ACK";
-        PackageType[PackageType["TYPE_HEARTBEAT"] = 3] = "TYPE_HEARTBEAT";
-        PackageType[PackageType["TYPE_DATA"] = 4] = "TYPE_DATA";
-        PackageType[PackageType["TYPE_KICK"] = 5] = "TYPE_KICK";
-    })(PackageType = Protocol.PackageType || (Protocol.PackageType = {}));
-    let Package;
-    (function (Package) {
-        function encode(type, body) {
+
+    export enum PackageType {
+        TYPE_HANDSHAKE = 1,
+        TYPE_HANDSHAKE_ACK = 2,
+        TYPE_HEARTBEAT = 3,
+        TYPE_DATA = 4,
+        TYPE_KICK = 5
+    }
+
+    export namespace Package {
+
+        export function encode(type: number, body?: Uint8Array) {
             const length = body ? body.length : 0;
             const buffer = new Uint8Array(PKG_HEAD_BYTES + length);
             let index = 0;
@@ -34,10 +35,9 @@ var Protocol;
                 copyArray(buffer, index, body, 0, length);
             }
             return buffer;
-        }
-        Package.encode = encode;
-        ;
-        function decode(bytes) {
+        };
+
+        export function decode(bytes: Uint8Array) {
             let offset = 0;
             let length = 0;
             const rs = [];
@@ -52,32 +52,30 @@ var Protocol;
                 rs.push({ 'type': type, 'body': body });
             }
             return rs;
-        }
-        Package.decode = decode;
-        ;
-    })(Package = Protocol.Package || (Protocol.Package = {}));
-    let MessageType;
-    (function (MessageType) {
-        MessageType[MessageType["TYPE_REQUEST"] = 0] = "TYPE_REQUEST";
-        MessageType[MessageType["TYPE_NOTIFY"] = 1] = "TYPE_NOTIFY";
-        MessageType[MessageType["TYPE_RESPONSE"] = 2] = "TYPE_RESPONSE";
-        MessageType[MessageType["TYPE_PUSH"] = 3] = "TYPE_PUSH";
-    })(MessageType = Protocol.MessageType || (Protocol.MessageType = {}));
-    let Message;
-    (function (Message) {
-        function encode(id, type, compressRoute, route, msg, compressGzip) {
+        };
+    }
+
+
+    export enum MessageType {
+        TYPE_REQUEST = 0,
+        TYPE_NOTIFY = 1,
+        TYPE_RESPONSE = 2,
+        TYPE_PUSH = 3
+    }
+
+    export namespace Message {
+        export function encode(id: number, type: number, compressRoute: boolean, route: number | string, msg: Uint8Array, compressGzip: boolean) {
             // caculate message max length
             const idBytes = msgHasId(type) ? caculateMsgIdBytes(id) : 0;
             let msgLen = MSG_FLAG_BYTES + idBytes;
-            let encodeRoute;
+            let encodeRoute: Uint8Array;
             if (msgHasRoute(type)) {
                 if (compressRoute) {
                     if (typeof route !== 'number') {
                         throw new Error('error flag for number route!');
                     }
                     msgLen += MSG_ROUTE_CODE_BYTES;
-                }
-                else {
+                } else {
                     msgLen += MSG_ROUTE_LEN_BYTES;
                     if (typeof route !== 'string') {
                         throw new Error('error flag for string route!');
@@ -89,39 +87,47 @@ var Protocol;
                     msgLen += route.length;
                 }
             }
+
             if (msg) {
                 msgLen += msg.length;
             }
+
             const buffer = new Uint8Array(msgLen);
             let offset = 0;
+
             // add flag
             offset = encodeMsgFlag(type, compressRoute, buffer, offset, compressGzip);
+
             // add message id
             if (msgHasId(type)) {
                 offset = encodeMsgId(id, buffer, offset);
             }
+
             // add route
             if (msgHasRoute(type)) {
                 //@ts-ignore
                 offset = encodeMsgRoute(compressRoute, typeof route === 'number' ? route : encodeRoute, buffer, offset);
             }
+
             // add body
             if (msg) {
                 offset = encodeMsgBody(msg, buffer, offset);
             }
+
             return buffer;
-        }
-        Message.encode = encode;
-        ;
-        function decode(buffer) {
+        };
+
+        export function decode(buffer: Uint8Array) {
             const bytes = new Uint8Array(buffer);
             const bytesLen = bytes.length || bytes.byteLength;
             let offset = 0, id = 0, route = null;
+
             // parse flag
             const flag = bytes[offset++];
             const compressRoute = flag & MSG_COMPRESS_ROUTE_MASK;
             const type = (flag >> 1) & MSG_TYPE_MASK;
             const compressGzip = (flag >> 4) & MSG_COMPRESS_GZIP_MASK;
+
             // parse id
             if (msgHasId(type)) {
                 let m = 0, i = 0;
@@ -132,37 +138,38 @@ var Protocol;
                     i++;
                 } while (m >= 128);
             }
+
             // parse route
             if (msgHasRoute(type)) {
                 if (compressRoute) {
                     route = (bytes[offset++]) << 8 | bytes[offset++];
-                }
-                else {
+                } else {
                     const routeLen = bytes[offset++];
                     if (routeLen) {
                         route = new Uint8Array(routeLen);
                         copyArray(route, 0, bytes, offset, routeLen);
                         route = strdecode(route);
-                    }
-                    else {
+                    } else {
                         route = '';
                     }
                     offset += routeLen;
                 }
             }
+
             // parse body
             const bodyLen = bytesLen - offset;
             const body = new Uint8Array(bodyLen);
+
             copyArray(body, 0, bytes, offset, bodyLen);
+
             return {
                 'id': id, 'type': type, 'compressRoute': compressRoute,
                 'route': route, 'body': body, 'compressGzip': compressGzip
             };
-        }
-        Message.decode = decode;
-        ;
-    })(Message = Protocol.Message || (Protocol.Message = {}));
-    function strencode(str) {
+        };
+    }
+
+    export function strencode(str: string) {
         const byteArray = new Uint8Array(str.length * 3);
         let offset = 0;
         for (let i = 0; i < str.length; i++) {
@@ -170,11 +177,9 @@ var Protocol;
             let codes = null;
             if (charCode <= 0x7f) {
                 codes = [charCode];
-            }
-            else if (charCode <= 0x7ff) {
+            } else if (charCode <= 0x7ff) {
                 codes = [0xc0 | (charCode >> 6), 0x80 | (charCode & 0x3f)];
-            }
-            else {
+            } else {
                 codes = [0xe0 | (charCode >> 12), 0x80 | ((charCode & 0xfc0) >> 6), 0x80 | (charCode & 0x3f)];
             }
             for (var j = 0; j < codes.length; j++) {
@@ -186,8 +191,8 @@ var Protocol;
         copyArray(_buffer, 0, byteArray, 0, offset);
         return _buffer;
     }
-    Protocol.strencode = strencode;
-    function strdecode(buffer) {
+
+    export function strdecode(buffer: Uint8Array) {
         const bytes = new Uint8Array(buffer);
         const array = [];
         let offset = 0;
@@ -197,12 +202,10 @@ var Protocol;
             if (bytes[offset] < 128) {
                 charCode = bytes[offset];
                 offset += 1;
-            }
-            else if (bytes[offset] < 224) {
+            } else if (bytes[offset] < 224) {
                 charCode = ((bytes[offset] & 0x1f) << 6) + (bytes[offset + 1] & 0x3f);
                 offset += 2;
-            }
-            else {
+            } else {
                 charCode = ((bytes[offset] & 0x0f) << 12) + ((bytes[offset + 1] & 0x3f) << 6) + (bytes[offset + 2] & 0x3f);
                 offset += 3;
             }
@@ -210,79 +213,84 @@ var Protocol;
         }
         return String.fromCharCode.apply(null, array);
     }
-    Protocol.strdecode = strdecode;
-    function copyArray(dest, doffset, src, soffset, length) {
+
+    function copyArray(dest: Uint8Array, doffset: number, src: Uint8Array, soffset: number, length: number) {
         for (var index = 0; index < length; index++) {
             dest[doffset++] = src[soffset++];
         }
-    }
-    ;
-    function msgHasId(type) {
+    };
+
+    function msgHasId(type: number) {
         return type === MessageType.TYPE_REQUEST || type === MessageType.TYPE_RESPONSE;
-    }
-    ;
-    function msgHasRoute(type) {
+    };
+
+    function msgHasRoute(type: number) {
         return type === MessageType.TYPE_REQUEST || type === MessageType.TYPE_NOTIFY || type === MessageType.TYPE_PUSH;
-    }
-    ;
-    function caculateMsgIdBytes(id) {
+    };
+
+    function caculateMsgIdBytes(id: number) {
         let len = 0;
         do {
             len += 1;
             id >>= 7;
         } while (id > 0);
         return len;
-    }
-    ;
-    function encodeMsgFlag(type, compressRoute, buffer, offset, compressGzip) {
+    };
+
+    function encodeMsgFlag(type: number, compressRoute: boolean, buffer: Uint8Array, offset: number, compressGzip: boolean) {
         if (type !== MessageType.TYPE_REQUEST && type !== MessageType.TYPE_NOTIFY &&
             type !== MessageType.TYPE_RESPONSE && type !== MessageType.TYPE_PUSH) {
             throw new Error('unkonw message type: ' + type);
         }
+
         buffer[offset] = (type << 1) | (compressRoute ? 1 : 0);
+
         if (compressGzip) {
             buffer[offset] = buffer[offset] | MSG_COMPRESS_GZIP_ENCODE_MASK;
         }
+
         return offset + MSG_FLAG_BYTES;
-    }
-    ;
-    function encodeMsgId(id, buffer, offset) {
+    };
+
+    function encodeMsgId(id: number, buffer: Uint8Array, offset: number) {
         do {
             let tmp = id % 128;
             const next = Math.floor(id / 128);
+
             if (next !== 0) {
                 tmp = tmp + 128;
             }
             buffer[offset++] = tmp;
+
             id = next;
         } while (id !== 0);
+
         return offset;
-    }
-    ;
-    function encodeMsgRoute(compressRoute, route, buffer, offset) {
+    };
+
+    function encodeMsgRoute(compressRoute: boolean, route: number | Uint8Array, buffer: Uint8Array, offset: number) {
         if (compressRoute) {
             if (typeof route !== 'number' || route > MSG_ROUTE_CODE_MAX) {
                 throw new Error('route number is overflow');
             }
+
             buffer[offset++] = (route >> 8) & 0xff;
             buffer[offset++] = route & 0xff;
-        }
-        else {
+        } else {
             if (route && typeof route !== 'number') {
                 buffer[offset++] = route.length & 0xff;
                 copyArray(buffer, offset, route, 0, route.length);
                 offset += route.length;
-            }
-            else {
+            } else {
                 buffer[offset++] = 0;
             }
         }
+
         return offset;
-    }
-    ;
-    function encodeMsgBody(msg, buffer, offset) {
+    };
+
+    function encodeMsgBody(msg: Uint8Array, buffer: Uint8Array, offset: number) {
         copyArray(buffer, offset, msg, 0, msg.length);
         return offset + msg.length;
-    }
-    ;
-})(Protocol = exports.Protocol || (exports.Protocol = {}));
+    };
+}
