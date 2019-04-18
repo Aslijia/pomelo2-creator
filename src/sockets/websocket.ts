@@ -43,8 +43,10 @@ export class websocket extends EventEmitter {
 
         this.socket.binaryType = 'arraybuffer';
         this.socket.onmessage = (event) => {
+            this.logger.debug('receive message', { byteLength: event.data.byteLength });
             this.emit('message', event.data);
         };
+
         this.socket.onerror = this.emit.bind(this, 'error');
         this.socket.onopen = this.emit.bind(this, 'connected');
         this.socket.onclose = this.emit.bind(this, 'closed');

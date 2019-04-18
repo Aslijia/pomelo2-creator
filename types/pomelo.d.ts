@@ -18,6 +18,16 @@ declare class Session {
     on(event: 'reconnect', listener: (...args: any[]) => void): void;
     on(event: 'kickout', listener: (...args: any[]) => void): void;
 }
+
+declare interface Logger {
+    trace(message: string, body?: object): void;
+    info(message: string, body?: object): void;
+    debug(message: string, body?: object): void;
+    warn(message: string, body?: object): void;
+    error(message: string, body?: object): void;
+    fatal(message: string, body?: object): void;
+}
+
 declare interface Option {
     auth(): Promise<object | undefined>;
 
@@ -32,6 +42,7 @@ declare interface Option {
 
     rsa?: string;
     usr?: object;
+    logger?: Logger;
 }
 
 export namespace pomelo {

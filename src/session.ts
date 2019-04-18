@@ -1,6 +1,6 @@
 
 import { EventEmitter } from 'events';
-import URLParse from 'url-parse';
+import * as  URLParse from 'url-parse';
 import { websocket } from './sockets/websocket';
 import * as is from 'is';
 
@@ -51,22 +51,22 @@ const RES_OLD_CLIENT = 501;
 
 class Console implements Logger {
     trace(message: string, body?: object) {
-        console.log.call(this, '%cTRACE %s:%j', 'color:#87CEEB;', message, body);
+        console.log.call(this, '%c[TRACE] %s', 'color:#87CEEB;', message, body);
     };
     info(message: string, body?: object) {
-        console.log.call(this, '%cINFO %s:%j', 'color:#228B22;', message, body);
+        console.log.call(this, '%c[INFO] %s', 'color:#228B22;', message, body);
     };
     debug(message: string, body?: object) {
-        console.log.call(this, '%cDEBUG %s:%j', 'color:#0000FF;', message, body);
+        console.log.call(this, '%c[DEBUG] %s', 'color:#0000FF;', message, body);
     };
     warn(message: string, body?: object) {
-        console.log.call(this, '%cWARN %s:%j', 'color:#FFD700;', message, body);
+        console.log.call(this, '%c[WARN] %s', 'color:#FFD700;', message, body);
     };
     error(message: string, body?: object) {
-        console.log.call(this, '%cERROR %s:%j', 'color:#DC143C;', message, body);
+        console.log.call(this, '%c[ERROR] %s', 'color:#DC143C;', message, body);
     };
     fatal(message: string, body?: object) {
-        console.log.call(this, '%cFATAL %s:%j', 'color:#9400D3;', message, body);
+        console.log.call(this, '%c[FATAL] %s', 'color:#9400D3;', message, body);
     };
 }
 
@@ -103,7 +103,7 @@ export class Session extends EventEmitter {
         this.logger = opts.logger || new Console();
         this.logger.trace('init pomelo', { uri, opts });
 
-        this._remote = URLParse(uri);
+        this._remote = new URLParse(uri);
         this.opts = opts;
 
         const protos = opts.localstorage.getItem('protos');
@@ -269,8 +269,7 @@ export class Session extends EventEmitter {
     }
 
 
-    private async processPackage(buffer: Uint8Array) {
-        this.logger.trace('process message', { size: buffer.length });
+    private async processPackage(buffer: ArrayBuffer) {
         const msgs = Protocol.Package.decode(buffer);
         if (!msgs) {
             if (this.socket)

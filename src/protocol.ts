@@ -37,10 +37,12 @@ export namespace Protocol {
             return buffer;
         };
 
-        export function decode(bytes: Uint8Array) {
+        export function decode(buffer: ArrayBuffer) {
             let offset = 0;
             let length = 0;
             const rs = [];
+            const bytes = new Uint8Array(buffer);
+
             while (offset < bytes.length) {
                 const type = bytes[offset++];
                 length = ((bytes[offset++]) << 16 | (bytes[offset++]) << 8 | bytes[offset++]) >>> 0;
