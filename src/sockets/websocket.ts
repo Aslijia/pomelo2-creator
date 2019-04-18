@@ -2,8 +2,23 @@
 
 import { EventEmitter } from 'events';
 
+declare interface Logger {
+    trace(message: string, body?: object): void;
+    info(message: string, body?: object): void;
+    debug(message: string, body?: object): void;
+    warn(message: string, body?: object): void;
+    error(message: string, body?: object): void;
+    fatal(message: string, body?: object): void;
+}
+
 export class websocket extends EventEmitter {
     socket: WebSocket | undefined;
+    logger: Logger;
+
+    constructor(logger: Logger) {
+        super();
+        this.logger = logger;
+    }
 
     get connected() {
         if (!this.socket) {
@@ -37,6 +52,7 @@ export class websocket extends EventEmitter {
     }
 
     async close(code: number, reason: string) {
+        this.logger.warn('socket colse', { code, reason });
         if (this.socket) {
             this.socket.close(code, reason);
             this.socket = undefined;
@@ -44,6 +60,7 @@ export class websocket extends EventEmitter {
     }
 
     async send(buffer: Uint8Array) {
+        this.logger.debug('send message', { size: buffer.length });
         if (this.socket) {
             return this.socket.send(buffer);
         }

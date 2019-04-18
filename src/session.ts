@@ -23,6 +23,15 @@ declare interface Socket {
     once(event: string, listener: (...args: any[]) => void): void;
 }
 
+declare interface Logger {
+    trace(message: string, body?: object): void;
+    info(message: string, body?: object): void;
+    debug(message: string, body?: object): void;
+    warn(message: string, body?: object): void;
+    error(message: string, body?: object): void;
+    fatal(message: string, body?: object): void;
+}
+
 declare interface Option {
     auth(): Promise<object | undefined>;
     retry?: number;
@@ -33,11 +42,33 @@ declare interface Option {
     decodeIO?: boolean;
     rsa?: string;
     usr?: object;
+    logger?: Logger;
 }
 
 const RES_OK = 200;
 const RES_FAIL = 500;
 const RES_OLD_CLIENT = 501;
+
+class Console implements Logger {
+    trace(message: string, body?: object) {
+        console.log.call('%cTRACE %s:%j', 'color:#87CEEB;', message, body);
+    };
+    info(message: string, body?: object) {
+        console.log.call('%cINFO %s:%j', 'color:#228B22;', message, body);
+    };
+    debug(message: string, body?: object) {
+        console.log.call('%cDEBUG %s:%j', 'color:#0000FF;', message, body);
+    };
+    warn(message: string, body?: object) {
+        console.log.call('%cWARN %s:%j', 'color:#FFD700;', message, body);
+    };
+    error(message: string, body?: object) {
+        console.log.call('%cERROR %s:%j', 'color:#DC143C;', message, body);
+    };
+    fatal(message: string, body?: object) {
+        console.log.call('%cFATAL %s:%j', 'color:#9400D3;', message, body);
+    };
+}
 
 export class Session extends EventEmitter {
     protected id: string = '';
@@ -66,8 +97,12 @@ export class Session extends EventEmitter {
 
     protected reqId: number = 0;
     protected callbacks: { [id: string]: { resolve: Function, reject: Function } } = {};
+    protected logger: Logger;
     constructor(uri: string, opts: Option) {
         super();
+        this.logger = opts.logger || new Console();
+        this.logger.trace('init pomelo', { uri, opts });
+
         this._remote = URLParse(uri);
         this.opts = opts;
 
@@ -95,8 +130,13 @@ export class Session extends EventEmitter {
         this.connect();
 
         this.on('reconnect', () => {
+            this.logger.warn('reconnect', { time: this.retryCounter % 10 + 1, retryCounter: this.retryCounter });
             this.retryTimer = setTimeout(this.connect.bind(this), (this.retryCounter % 10 + 1) * 1000);
             this.retryCounter++;
+        });
+
+        this.on('error', (err: any) => {
+            this.logger.error('socket error.', { error: err.message });
         });
     }
 
@@ -108,7 +148,7 @@ export class Session extends EventEmitter {
         switch (this._remote.protocol) {
             case 'ws:':
             case 'wss:':
-                this.socket = new websocket();
+                this.socket = new websocket(this.logger);
                 break;
             default:
                 throw new Error('un support socket protocol!');
@@ -117,10 +157,12 @@ export class Session extends EventEmitter {
         this.socket.on('error', this.emit.bind(this, 'error'));
         this.socket.on('message', this.processPackage.bind(this));
         this.socket.on('closed', () => {
+            this.logger.warn('socket closed');
             delete this.socket;
             this.socket = undefined;
 
             if (this.opts.retry && this.opts.retry < this.retryCounter) {
+                this.logger.warn('out of reconnect!', { count: this.opts.retry, retryCounter: this.retryCounter });
                 return;
             }
 
@@ -128,6 +170,7 @@ export class Session extends EventEmitter {
         });
 
         this.socket.on('connected', () => {
+            this.logger.debug('socket connected');
             this.retryCounter = 0;
             if (this.socket) {
                 this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HANDSHAKE, Protocol.strencode(JSON.stringify(this.handshakeBuffer))));
@@ -167,6 +210,7 @@ export class Session extends EventEmitter {
     }
 
     async request(route: string, msg: object) {
+        this.logger.trace('request', { route, msg, reqId: this.reqId + 1 });
         if (!this.socket) {
             await this.connect();
         }
@@ -193,6 +237,7 @@ export class Session extends EventEmitter {
     }
 
     async notify(route: string, msg: object) {
+        this.logger.trace('notify', { route, msg });
         if (!this.socket) {
             await this.connect();
         }
@@ -208,6 +253,7 @@ export class Session extends EventEmitter {
     }
 
     async disconnect(code: number, reason: string) {
+        this.logger.debug('disconnect', { code, reason });
         if (this.heartbeatId) {
             clearTimeout(this.heartbeatId);
         }
@@ -224,6 +270,7 @@ export class Session extends EventEmitter {
 
 
     private async processPackage(buffer: Uint8Array) {
+        this.logger.trace('process message', { size: buffer.length });
         const msgs = Protocol.Package.decode(buffer);
         if (!msgs) {
             if (this.socket)
@@ -248,12 +295,14 @@ export class Session extends EventEmitter {
                     this.onKickout(msg.body);
                     break;
                 default:
-                    throw new Error('invalid message type!');
+                    this.logger.error('invalid package type', { msg });
+                    break;
             }
         }
     }
 
     private async onHandshake(body?: Uint8Array | null) {
+        this.logger.trace('hand shake', { size: body ? body.length : 0 });
         if (!body) {
             return;
         }
@@ -268,10 +317,12 @@ export class Session extends EventEmitter {
         }
 
         if (msg.sys && msg.sys.heartbeat) {
+            this.logger.debug('heartbeat', { heartbeat: msg.sys.heartbeat });
             this.heartbeatInterval = msg.sys.heartbeat * 1000; // heartbeat interval
             this.heartbeatTimeout = this.heartbeatInterval * 5; // max heartbeat timeout
         }
         if (msg.sys.id) {
+            this.logger.debug('init session id', { id: msg.sys.id });
             this.id = msg.sys.id;
         }
 
@@ -286,6 +337,7 @@ export class Session extends EventEmitter {
         }
         //Init protobuf protos
         if (protos) {
+            this.logger.debug('init protobuf', { protos });
             this.protoVersion = protos.version || 0;
             this.serverProtos = protos.server || {};
             this.clientProtos = protos.client || {};
@@ -298,6 +350,7 @@ export class Session extends EventEmitter {
     }
 
     private async onHeartbeat() {
+        this.logger.debug('heartbeat', { heartbeatId: this.heartbeatId, heartbeatInterval: this.heartbeatInterval });
         if (!this.heartbeatInterval || this.heartbeatId) {
             return;
         }
@@ -322,6 +375,7 @@ export class Session extends EventEmitter {
 
 
     private async onMessage(body?: Uint8Array | null) {
+        this.logger.debug('new message', { body: body ? body.length : 0 });
         if (!body) {
             return;
         }
@@ -343,6 +397,7 @@ export class Session extends EventEmitter {
     }
 
     private async onKickout(body?: Uint8Array | null) {
+        this.logger.debug('kickout by remote server', { body: body ? body.length : 0 });
         if (!body) {
             return;
         }
@@ -393,6 +448,7 @@ export class Session extends EventEmitter {
     }
 
     async auth() {
+        this.logger.debug('auto');
         if (this.opts.auth) {
             const response = await this.opts.auth();
             if (response) {
