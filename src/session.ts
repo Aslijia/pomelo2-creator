@@ -51,22 +51,22 @@ const RES_OLD_CLIENT = 501;
 
 class Console implements Logger {
     trace(message: string, body?: object) {
-        console.log.call('%cTRACE %s:%j', 'color:#87CEEB;', message, body);
+        console.log.call(this, '%cTRACE %s:%j', 'color:#87CEEB;', message, body);
     };
     info(message: string, body?: object) {
-        console.log.call('%cINFO %s:%j', 'color:#228B22;', message, body);
+        console.log.call(this, '%cINFO %s:%j', 'color:#228B22;', message, body);
     };
     debug(message: string, body?: object) {
-        console.log.call('%cDEBUG %s:%j', 'color:#0000FF;', message, body);
+        console.log.call(this, '%cDEBUG %s:%j', 'color:#0000FF;', message, body);
     };
     warn(message: string, body?: object) {
-        console.log.call('%cWARN %s:%j', 'color:#FFD700;', message, body);
+        console.log.call(this, '%cWARN %s:%j', 'color:#FFD700;', message, body);
     };
     error(message: string, body?: object) {
-        console.log.call('%cERROR %s:%j', 'color:#DC143C;', message, body);
+        console.log.call(this, '%cERROR %s:%j', 'color:#DC143C;', message, body);
     };
     fatal(message: string, body?: object) {
-        console.log.call('%cFATAL %s:%j', 'color:#9400D3;', message, body);
+        console.log.call(this, '%cFATAL %s:%j', 'color:#9400D3;', message, body);
     };
 }
 
