@@ -51,22 +51,22 @@ const RES_OLD_CLIENT = 501;
 
 class Console implements Logger {
     trace(message: string, body?: object) {
-        console.log.call(this, '%c[TRACE] %s', 'color:#87CEEB;', message, body);
+        console.log.call(this, '%c[TRACE] %s:%j', 'color:#87CEEB;', message, body);
     };
     info(message: string, body?: object) {
-        console.log.call(this, '%c[INFO] %s', 'color:#228B22;', message, body);
+        console.log.call(this, '%c[INFO] %s:%j', 'color:#228B22;', message, body);
     };
     debug(message: string, body?: object) {
-        console.log.call(this, '%c[DEBUG] %s', 'color:#0000FF;', message, body);
+        console.log.call(this, '%c[DEBUG] %s:%j', 'color:#0000FF;', message, body);
     };
     warn(message: string, body?: object) {
-        console.log.call(this, '%c[WARN] %s', 'color:#FFD700;', message, body);
+        console.log.call(this, '%c[WARN] %s:%j', 'color:#FFD700;', message, body);
     };
     error(message: string, body?: object) {
-        console.log.call(this, '%c[ERROR] %s', 'color:#DC143C;', message, body);
+        console.log.call(this, '%c[ERROR] %s:%j', 'color:#DC143C;', message, body);
     };
     fatal(message: string, body?: object) {
-        console.log.call(this, '%c[FATAL] %s', 'color:#9400D3;', message, body);
+        console.log.call(this, '%c[FATAL] %s:%j', 'color:#9400D3;', message, body);
     };
 }
 
@@ -140,6 +140,13 @@ export class Session extends EventEmitter {
         });
     }
 
+    emit(type: string | symbol, ...args: any[]) {
+        for (let i in this._listeners) {
+            this._listeners[i].emit(type, ...args);
+        }
+        return super.emit(type, ...args);
+    }
+
     private async connect() {
         if (this.socket && (this.socket.connectting || this.socket.connected)) {
             return;
@@ -183,7 +190,6 @@ export class Session extends EventEmitter {
     when(channel: string, event: string, listener: (...args: any[]) => void) {
         if (!this._listeners[channel]) {
             this._listeners[channel] = new EventEmitter();
-            this._listeners[channel].emit = this.emit.bind(this);
         }
 
         this._listeners[channel].on(event, listener);
@@ -349,7 +355,7 @@ export class Session extends EventEmitter {
     }
 
     private async onHeartbeat() {
-        this.logger.debug('heartbeat', { heartbeatId: this.heartbeatId, heartbeatInterval: this.heartbeatInterval });
+        this.logger.trace('heartbeat', { heartbeatId: this.heartbeatId, heartbeatInterval: this.heartbeatInterval });
         if (!this.heartbeatInterval || this.heartbeatId) {
             return;
         }
@@ -374,7 +380,7 @@ export class Session extends EventEmitter {
 
 
     private async onMessage(body?: Uint8Array | null) {
-        this.logger.debug('new message', { body: body ? body.length : 0 });
+        this.logger.trace('new message', { body: body ? body.length : 0 });
         if (!body) {
             return;
         }
@@ -396,7 +402,7 @@ export class Session extends EventEmitter {
     }
 
     private async onKickout(body?: Uint8Array | null) {
-        this.logger.debug('kickout by remote server', { body: body ? body.length : 0 });
+        this.logger.trace('kickout by remote server', { body: body ? body.length : 0 });
         if (!body) {
             return;
         }
