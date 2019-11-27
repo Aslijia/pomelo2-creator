@@ -17,6 +17,8 @@ declare class Session {
     on(event: 'disconnect', listener: (...args: any[]) => void): void;
     on(event: 'reconnect', listener: (...args: any[]) => void): void;
     on(event: 'kickout', listener: (...args: any[]) => void): void;
+
+    emit(event: string, data: any): any;
 }
 
 declare interface Logger {
