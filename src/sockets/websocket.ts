@@ -43,7 +43,7 @@ export class websocket extends EventEmitter {
 
         this.socket.binaryType = 'arraybuffer';
         this.socket.onmessage = (event) => {
-            this.logger.debug('receive message', { byteLength: event.data.byteLength });
+            this.logger.trace('receive message', { byteLength: event.data.byteLength });
             this.emit('message', event.data);
         };
 
@@ -62,7 +62,7 @@ export class websocket extends EventEmitter {
     }
 
     async send(buffer: Uint8Array) {
-        this.logger.debug('send message', { size: buffer.length });
+        this.logger.trace('send message', { size: buffer.length });
         if (this.socket) {
             return this.socket.send(buffer);
         }
