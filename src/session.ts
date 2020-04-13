@@ -216,7 +216,7 @@ export class Session extends EventEmitter {
     }
 
     async request(route: string, msg: object) {
-        this.logger.trace('request', { route, msg, reqId: this.reqId + 1 });
+        this.logger.trace('request', { route, msg, reqId: this.reqId++ });
         if (!this.socket) {
             await this.connect();
         }
@@ -229,7 +229,7 @@ export class Session extends EventEmitter {
             await this.asyncEvent('ready');
         }
 
-        const reqid = this.reqId++;
+        const reqid = this.reqId;
 
         const body = this._encode(reqid, route, msg);
         if (body) {
