@@ -229,16 +229,16 @@ export class Session extends EventEmitter {
             await this.asyncEvent('ready');
         }
 
-        this.reqId++;
+        const reqid = this.reqId++;
 
-        const body = this._encode(this.reqId, route, msg);
+        const body = this._encode(reqid, route, msg);
         if (body) {
             await this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body));
         }
 
         return await new Promise((resolve, reject) => {
-            this.callbacks[this.reqId] = { resolve, reject };
-            this.routeMap[this.reqId] = route;
+            this.callbacks[reqid] = { resolve, reject };
+            this.routeMap[reqid] = route;
         });
     }
 
