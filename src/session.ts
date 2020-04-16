@@ -174,6 +174,7 @@ export class Session extends EventEmitter {
 
             if (this.opts.retry && this.opts.retry < this.retryCounter) {
                 this.logger.warn('out of reconnect!', { count: this.opts.retry, retryCounter: this.retryCounter });
+                this.emit('gone');
                 return;
             }
 
