@@ -130,6 +130,10 @@ export class Session extends EventEmitter {
         this.connect();
 
         this.on('reconnect', () => {
+            if (this.retryCounter > (this.opts.retry || 10)) {
+                this.emit('gone');
+                return;
+            }
             this.logger.warn('reconnect', { time: this.retryCounter % 10 + 1, retryCounter: this.retryCounter });
             this.retryTimer = setTimeout(this.connect.bind(this), (this.retryCounter % 10 + 1) * 1000);
             this.retryCounter++;
