@@ -138,10 +138,6 @@ export class Session extends EventEmitter {
             this.retryTimer = setTimeout(this.connect.bind(this), (this.retryCounter % 10 + 1) * 1000);
             this.retryCounter++;
         });
-
-        this.on('error', (err: any) => {
-            this.logger.error('socket error.', { error: err.message });
-        });
     }
 
     emit(type: string | symbol, ...args: any[]) {
@@ -165,7 +161,10 @@ export class Session extends EventEmitter {
                 throw new Error('un support socket protocol!');
         }
 
-        this.socket.on('error', this.emit.bind(this, 'error'));
+        this.socket.on('error', (err) => {
+            this.logger.error('websocket has error', { message: err.message });
+        });
+
         this.socket.on('message', this.processPackage.bind(this));
         this.socket.on('closed', () => {
             this.logger.warn('socket closed');
