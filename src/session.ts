@@ -131,7 +131,7 @@ export class Session extends EventEmitter {
 
         this.on('reconnect', () => {
             if (this.retryCounter > (this.opts.retry || 10)) {
-                this.emit('gone');
+                this.emit('gone', { retryCounter: this.retryCounter });
                 return;
             }
             this.logger.warn('reconnect', { time: this.retryCounter % 10 + 1, retryCounter: this.retryCounter });
@@ -171,13 +171,6 @@ export class Session extends EventEmitter {
             this.logger.warn('socket closed');
             delete this.socket;
             this.socket = undefined;
-
-            if (this.opts.retry && this.opts.retry < this.retryCounter) {
-                this.logger.warn('out of reconnect!', { count: this.opts.retry, retryCounter: this.retryCounter });
-                this.emit('gone');
-                return;
-            }
-
             this.emit('reconnect');
         });
 
