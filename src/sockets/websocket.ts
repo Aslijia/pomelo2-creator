@@ -57,6 +57,7 @@ export class websocket extends EventEmitter {
         this.logger.warn('socket colse', { code, reason });
         if (this.socket) {
             this.socket.close(code, reason);
+            delete this.socket;
             this.socket = undefined;
         }
     }

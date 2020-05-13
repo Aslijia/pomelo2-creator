@@ -14,7 +14,7 @@ const JS_WS_CLIENT_VERSION = '0.0.1';
 declare interface Socket {
     connected: number;
     connectting: number;
-
+    removeAllListeners(): void;
     connect(uri: string): Promise<Socket | undefined>;
     send(buffer: Uint8Array): void;
     close(code: number, reason: string): void;
@@ -152,6 +152,11 @@ export class Session extends EventEmitter {
             return;
         }
 
+        if (this.socket) {
+            this.socket.removeAllListeners();
+            delete this.socket;
+        }
+
         switch (this._remote.protocol) {
             case 'ws:':
             case 'wss:':
@@ -168,6 +173,8 @@ export class Session extends EventEmitter {
         this.socket.on('message', this.processPackage.bind(this));
         this.socket.on('closed', () => {
             this.logger.warn('socket closed');
+            if (this.socket)
+                this.socket.removeAllListeners();
             delete this.socket;
             this.socket = undefined;
             this.emit('reconnect');
