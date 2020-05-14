@@ -173,15 +173,18 @@ export class Session extends EventEmitter {
         this.socket.on('message', this.processPackage.bind(this));
         this.socket.on('closed', () => {
             this.logger.warn('socket closed');
-            if (this.socket)
+            this.emit('disconnect');
+            if (this.socket) {
                 this.socket.removeAllListeners();
-            delete this.socket;
-            this.socket = undefined;
+                delete this.socket;
+                this.socket = undefined;
+            }
             this.emit('reconnect');
         });
 
         this.socket.on('connected', () => {
             this.logger.debug('socket connected');
+            this.emit('connecting', { retryCounter: this.retryCounter });
             this.retryCounter = 0;
             if (this.socket) {
                 this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HANDSHAKE, Protocol.strencode(JSON.stringify(this.handshakeBuffer))));

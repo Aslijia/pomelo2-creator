@@ -4,6 +4,7 @@ declare class Session {
 
     auth(): Promise<any | undefined>;
 
+    connect(): Promise<void>;
     request(route: string, msg: any): Promise<any>;
     notify(route: string, msg: any): Promise<any>;
 
@@ -15,6 +16,7 @@ declare class Session {
     on(event: 'error', listener: (...args: any[]) => void): void;
     on(event: 'ready', listener: (...args: any[]) => void): void;
     on(event: 'disconnect', listener: (...args: any[]) => void): void;
+    on(event: 'connecting', listener: (...args: any[]) => void): void;
     on(event: 'reconnect', listener: (...args: any[]) => void): void;
     on(event: 'kickout', listener: (...args: any[]) => void): void;
     on(event: 'gone', listener: (...args: any[]) => void): void;
