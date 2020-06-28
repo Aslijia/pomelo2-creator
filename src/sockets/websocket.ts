@@ -56,7 +56,7 @@ export class websocket extends EventEmitter {
     async close(code: number, reason: string) {
         this.logger.warn('socket colse', { code, reason });
         if (this.socket) {
-            this.socket.close(code, reason);
+            this.socket.close(1000, reason);
             delete this.socket;
             this.socket = undefined;
         }
@@ -64,7 +64,7 @@ export class websocket extends EventEmitter {
 
     async send(buffer: Uint8Array) {
         this.logger.trace('send message', { size: buffer.length });
-        if (this.socket) {
+        if (this.socket && this.connected) {
             return this.socket.send(buffer);
         }
         return Promise.reject('socket hunup!');
