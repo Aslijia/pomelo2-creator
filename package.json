@@ -1,6 +1,6 @@
 {
   "name": "pomelo2-creator",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "",
   "main": "./lib/index.js",
   "scripts": {
@@ -19,8 +19,6 @@
   "homepage": "https://github.com/Aslijia/pomelo2-creator#readme",
   "dependencies": {
     "events": "^3.0.0",
-    "is": "^3.3.0",
-    "protobufjs": "^6.8.8",
     "url-parse": "^1.4.6"
   },
   "files": [
@@ -30,7 +28,6 @@
   "types": "./types/pomelo.d.ts",
   "devDependencies": {
     "@types/events": "^3.0.0",
-    "@types/is": "0.0.21",
     "@types/url-parse": "^1.4.3"
   }
 }

@@ -2,7 +2,6 @@
 import { EventEmitter } from 'events';
 import * as  URLParse from 'url-parse';
 import { websocket } from './sockets/websocket';
-import * as is from 'is';
 
 import { Protobuf } from './protobuf';
 import { Protocol } from './protocol';
@@ -140,7 +139,7 @@ export class Session extends EventEmitter {
         });
     }
 
-    emit(type: string | symbol, ...args: any[]) {
+    emit(type: string | number, ...args: any[]) {
         for (let i in this._listeners) {
             this._listeners[i].emit(type, ...args);
         }
@@ -282,7 +281,7 @@ export class Session extends EventEmitter {
     }
 
 
-    private async processPackage(buffer: ArrayBuffer) {
+    private processPackage(buffer: ArrayBuffer) {
         const msgs = Protocol.Package.decode(buffer);
         if (!msgs) {
             if (this.socket)
@@ -294,8 +293,9 @@ export class Session extends EventEmitter {
             const msg = msgs[i];
             switch (msg.type) {
                 case Protocol.PackageType.TYPE_HANDSHAKE:
-                    await this.onHandshake(msg.body);
-                    await this.auth();
+                    this.logger.warn('初始化 socket 握手协议!', {})
+                    this.onHandshake(msg.body);
+                    this.auth();
                     break;
                 case Protocol.PackageType.TYPE_HEARTBEAT:
                     this.onHeartbeat();
@@ -313,23 +313,26 @@ export class Session extends EventEmitter {
         }
     }
 
-    private async onHandshake(body?: Uint8Array | null) {
-        this.logger.trace('hand shake', { size: body ? body.length : 0 });
+    private onHandshake(body?: Uint8Array | null) {
+        this.logger.trace('pomelo 握手协议', { size: body ? body.length : 0 });
         if (!body) {
+            this.logger.fatal('handshake failed', {})
             return;
         }
 
         const msg = JSON.parse(Protocol.strdecode(body));
         if (msg.code === RES_OLD_CLIENT) {
             this.emit('error', new Error('invalid version'));
+            this.logger.error('pomelo protocol has error', msg);
             return;
         }
         if (msg.code !== RES_OK) {
             this.emit('error', new Error('handshake failed'));
+            this.logger.error('handshake failed', msg);
         }
 
         if (msg.sys && msg.sys.heartbeat) {
-            this.logger.debug('heartbeat', { heartbeat: msg.sys.heartbeat });
+            this.logger.debug('init heartbeat from remote', { heartbeat: msg.sys.heartbeat });
             this.heartbeatInterval = msg.sys.heartbeat * 1000; // heartbeat interval
             this.heartbeatTimeout = this.heartbeatInterval * 5; // max heartbeat timeout
         }
@@ -359,9 +362,11 @@ export class Session extends EventEmitter {
         }
         if (this.socket)
             this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HANDSHAKE_ACK));
+        else
+            this.logger.error('TYPE_HANDSHAKE_ACK failed by socket is gone!', {});
     }
 
-    private async onHeartbeat() {
+    private onHeartbeat() {
         this.logger.trace('heartbeat', { heartbeatId: this.heartbeatId, heartbeatInterval: this.heartbeatInterval });
         if (!this.heartbeatInterval || this.heartbeatId) {
             return;
@@ -386,7 +391,7 @@ export class Session extends EventEmitter {
     }
 
 
-    private async onMessage(body?: Uint8Array | null) {
+    private onMessage(body?: Uint8Array | null) {
         this.logger.trace('new message', { body: body ? body.length : 0 });
         if (!body) {
             return;
@@ -408,7 +413,7 @@ export class Session extends EventEmitter {
         }
     }
 
-    private async onKickout(body?: Uint8Array | null) {
+    private onKickout(body?: Uint8Array | null) {
         this.logger.trace('kickout by remote server', { body: body ? body.length : 0 });
         if (!body) {
             return;
