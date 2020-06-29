@@ -10,8 +10,15 @@ declare interface Logger {
     error(message: string, body?: object): void;
     fatal(message: string, body?: object): void;
 }
-
+enum STATUS {
+    UNKNOWN = 0,
+    CONNECTING = 1,
+    OPEN = 2,
+    CLOSING = 3,
+    CLOSED = 4
+}
 export class websocket extends EventEmitter {
+    status: number = STATUS.UNKNOWN;
     socket: WebSocket | undefined;
     logger: Logger;
 
@@ -22,16 +29,16 @@ export class websocket extends EventEmitter {
 
     get connected() {
         if (!this.socket) {
-            return 0;
+            return false;
         }
-        return this.socket.OPEN;
+        return this.status === STATUS.OPEN;
     }
 
     get connectting() {
         if (!this.socket) {
-            return 0;
+            return false;
         }
-        return this.socket.CONNECTING;
+        return this.status === STATUS.CONNECTING;
     }
 
     async connect(uri: string) {
@@ -40,6 +47,7 @@ export class websocket extends EventEmitter {
         }
 
         this.socket = new WebSocket(uri);
+        this.status = STATUS.CONNECTING
 
         this.socket.binaryType = 'arraybuffer';
         this.socket.onmessage = (event) => {
@@ -47,9 +55,20 @@ export class websocket extends EventEmitter {
             this.emit('message', event.data);
         };
 
-        this.socket.onerror = this.emit.bind(this, 'error');
-        this.socket.onopen = this.emit.bind(this, 'connected');
-        this.socket.onclose = this.emit.bind(this, 'closed');
+        this.socket.onerror = (err) => {
+            this.emit('error', err);
+        }
+
+        this.socket.onopen = () => {
+            this.status = STATUS.OPEN;
+            this.emit('connected');
+        }
+
+        this.socket.onclose = () => {
+            this.status = STATUS.CLOSED
+            this.emit('closed');
+        }
+
         return this;
     }
 
@@ -63,9 +82,9 @@ export class websocket extends EventEmitter {
     }
 
     async send(buffer: Uint8Array) {
-        if (this.socket) {
+        if (this.connected) {
             this.logger.trace('send message', { size: buffer.length });
-            return this.socket.send(buffer);
+            return this.socket && this.socket.send(buffer);
         }
         this.logger.error('send message failed', { size: buffer.length });
         return Promise.reject('socket hunup!');

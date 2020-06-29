@@ -11,8 +11,9 @@ const JS_WS_CLIENT_TYPE = 'cocos-creator-api';
 const JS_WS_CLIENT_VERSION = '0.0.1';
 
 declare interface Socket {
-    connected: number;
-    connectting: number;
+    connected: boolean;
+    connectting: boolean;
+
     removeAllListeners(): void;
     connect(uri: string): Promise<Socket | undefined>;
     send(buffer: Uint8Array): void;
@@ -163,6 +164,9 @@ export class Session extends EventEmitter {
                 break;
             default:
                 throw new Error('un support socket protocol!');
+        }
+        if (!this.socket) {
+            return;
         }
 
         this.socket.on('error', (err) => {
