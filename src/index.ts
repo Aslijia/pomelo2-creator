@@ -1,7 +1,7 @@
-import { Session } from "./session";
+import { Session } from './session'
 
 export namespace pomelo {
     export function create(uri: string, opts: any) {
-        return new Session(uri, opts);
+        return new Session(uri, opts)
     }
 }

@@ -1,33 +1,33 @@
 {
-	"name": "pomelo2-creator",
-	"version": "1.4.0",
-	"description": "",
-	"main": "./lib/index.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/Aslijia/pomelo2-creator.git"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"bugs": {
-		"url": "https://github.com/Aslijia/pomelo2-creator/issues"
-	},
-	"homepage": "https://github.com/Aslijia/pomelo2-creator#readme",
-	"dependencies": {
-		"events": "^3.0.0",
-		"url-parse": "^1.4.6"
-	},
-	"files": [
-		"lib",
-		"types"
-	],
-	"types": "./types/pomelo.d.ts",
-	"devDependencies": {
-		"@types/events": "^3.0.0",
-		"@types/url-parse": "^1.4.3"
-	}
+    "name": "pomelo2-creator",
+    "version": "1.4.1",
+    "description": "",
+    "main": "./lib/index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Aslijia/pomelo2-creator.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Aslijia/pomelo2-creator/issues"
+    },
+    "homepage": "https://github.com/Aslijia/pomelo2-creator#readme",
+    "dependencies": {
+        "events": "^3.0.0",
+        "url-parse": "^1.4.6"
+    },
+    "files": [
+        "lib",
+        "types"
+    ],
+    "types": "./types/pomelo.d.ts",
+    "devDependencies": {
+        "@types/events": "^3.0.0",
+        "@types/url-parse": "^1.4.3"
+    }
 }
