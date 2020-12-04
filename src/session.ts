@@ -13,7 +13,7 @@ declare interface Socket {
     connectting: boolean
 
     removeAllListeners(): void
-    connect(uri: string, protocol?: string): Promise<Socket | undefined>
+    connect(uri: string, protocol?: string, cert?: any): Promise<Socket | undefined>
     send(buffer: Uint8Array): void
     close(code: number, reason: string): void
 
@@ -41,6 +41,7 @@ declare interface Option {
     rsa?: string
     usr?: object
     logger?: Logger
+    cert?: any
 }
 
 const RES_OK = 200
@@ -197,7 +198,8 @@ export class Session extends EventEmitter {
             }
         })
 
-        this.socket.connect(this._remote.href, this._remote.protocol)
+        const protocol = this._remote.protocol.replace(':', '')
+        this.socket.connect(this._remote.href, protocol, protocol === 'wss' ? this.opts.cert : undefined)
     }
 
     when(channel: string, event: string, listener: (...args: any[]) => void) {

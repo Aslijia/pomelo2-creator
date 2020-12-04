@@ -41,14 +41,15 @@ export class websocket extends EventEmitter {
         return this.status === STATUS.CONNECTING
     }
 
-    async connect(uri: string, protocal?: string) {
+    async connect(uri: string, protocal?: string, cert?: any) {
         if (this.socket) {
             this.logger.warn('socket already inuse', { uri, protocal })
             return this
         }
 
         this.logger.trace('try to connect remote server', { uri, protocal })
-        this.socket = new WebSocket(uri, protocal)
+        /// @ts-ignore
+        this.socket = new WebSocket(uri, protocal, cert)
         this.status = STATUS.CONNECTING
 
         this.socket.binaryType = 'arraybuffer'
