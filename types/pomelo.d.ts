@@ -50,6 +50,7 @@ declare interface Option {
     rsa?: string
     usr?: object
     logger?: Logger
+    cert?: any
 }
 
 export namespace pomelo {
