@@ -90,12 +90,17 @@ export class websocket extends EventEmitter {
     }
 
     async send(buffer: Uint8Array) {
-        if (this.connected) {
+        if (this.socket && this.connected) {
             this.logger.trace('send message', { size: buffer.length })
-            return this.socket && this.socket.send(buffer)
+            try {
+                this.socket.send(buffer)
+            } catch (err) {
+                this.logger.error('send message failed', { message: buffer.toString(), error: err })
+            }
+            return
         }
 
-        this.logger.error('send message failed', { size: buffer.length })
+        this.logger.error('send message failed', { size: buffer.length, message: buffer.toString() })
         return Promise.reject('socket hunup!')
     }
 }
