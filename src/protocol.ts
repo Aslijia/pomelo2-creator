@@ -26,7 +26,7 @@ export namespace Protocol {
     export namespace Package {
         export function encode(type: number, body?: Uint8Array) {
             const length = body ? body.length : 0
-            const buffer = new Uint8Array(PKG_HEAD_BYTES + length)
+            const buffer = alloc_buffer(PKG_HEAD_BYTES + length)
             let index = 0
             buffer[index++] = type & 0xff
             buffer[index++] = (length >> 16) & 0xff
@@ -42,12 +42,12 @@ export namespace Protocol {
             let offset = 0
             let length = 0
             const rs = []
-            const bytes = new Uint8Array(buffer)
+            const bytes = alloc_buffer(buffer)
 
             while (offset < bytes.length) {
                 const type = bytes[offset++]
                 length = ((bytes[offset++] << 16) | (bytes[offset++] << 8) | bytes[offset++]) >>> 0
-                const body = length ? new Uint8Array(length) : null
+                const body = length ? alloc_buffer(length) : null
                 if (body) {
                     copyArray(body, 0, bytes, offset, length)
                 }
@@ -66,11 +66,11 @@ export namespace Protocol {
     }
 
     export namespace Message {
-        export function encode(id: number, type: number, compressRoute: boolean, route: number | string, msg: Uint8Array, compressGzip: boolean) {
+        export function encode(id: number, type: number, compressRoute: boolean, route: any, msg: Uint8Array, compressGzip: boolean) {
             // caculate message max length
             const idBytes = msgHasId(type) ? caculateMsgIdBytes(id) : 0
             let msgLen = MSG_FLAG_BYTES + idBytes
-            let encodeRoute: Uint8Array
+
             if (msgHasRoute(type)) {
                 if (compressRoute) {
                     if (typeof route !== 'number') {
@@ -79,14 +79,13 @@ export namespace Protocol {
                     msgLen += MSG_ROUTE_CODE_BYTES
                 } else {
                     msgLen += MSG_ROUTE_LEN_BYTES
-                    if (typeof route !== 'string') {
-                        throw new Error('error flag for string route!')
+                    if (route) {
+                        route = strencode(route)
+                        if (route.length > 255) {
+                            throw new Error('route maxlength is overflow')
+                        }
+                        msgLen += route.length
                     }
-                    encodeRoute = strencode(route)
-                    if (route.length > 255) {
-                        throw new Error('route maxlength is overflow')
-                    }
-                    msgLen += route.length
                 }
             }
 
@@ -94,7 +93,7 @@ export namespace Protocol {
                 msgLen += msg.length
             }
 
-            const buffer = new Uint8Array(msgLen)
+            const buffer = alloc_buffer(msgLen)
             let offset = 0
 
             // add flag
@@ -126,7 +125,7 @@ export namespace Protocol {
         }
 
         export function decode(buffer: Uint8Array) {
-            const bytes = new Uint8Array(buffer)
+            const bytes = alloc_buffer(buffer)
             const bytesLen = bytes.length || bytes.byteLength
             let offset = 0,
                 id = 0,
@@ -157,7 +156,7 @@ export namespace Protocol {
                 } else {
                     const routeLen = bytes[offset++]
                     if (routeLen) {
-                        route = new Uint8Array(routeLen)
+                        route = alloc_buffer(routeLen)
                         copyArray(route, 0, bytes, offset, routeLen)
                         route = strdecode(route)
                     } else {
@@ -169,7 +168,7 @@ export namespace Protocol {
 
             // parse body
             const bodyLen = bytesLen - offset
-            const body = new Uint8Array(bodyLen)
+            const body = alloc_buffer(bodyLen)
 
             copyArray(body, 0, bytes, offset, bodyLen)
 
