@@ -1,5 +1,5 @@
 function alloc_buffer(n: any) {
-    return typeof window === 'undefined' ? new Buffer(n) : new Uint8Array(n)
+    return new Uint8Array(n)
 }
 export namespace Protocol {
     const PKG_HEAD_BYTES = 4
