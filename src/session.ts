@@ -3,7 +3,7 @@ import * as URLParse from 'url-parse'
 import { websocket } from './sockets/websocket'
 
 import { Protobuf } from './protobuf'
-import { Protocol } from './protocol'
+const { Package, Message, strencode, strdecode } = require('./protocol')
 
 const JS_WS_CLIENT_TYPE = 'cocos-creator-api'
 const JS_WS_CLIENT_VERSION = '0.0.1'
@@ -194,7 +194,7 @@ export class Session extends EventEmitter {
             this.emit('connecting', { retryCounter: this.retryCounter })
             this.retryCounter = 0
             if (this.socket) {
-                this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HANDSHAKE, Protocol.strencode(JSON.stringify(this.handshakeBuffer))))
+                this.socket.send(Package.encode(Package.TYPE_HANDSHAKE, strencode(JSON.stringify(this.handshakeBuffer))))
             }
         })
 
@@ -247,7 +247,7 @@ export class Session extends EventEmitter {
 
         const body = this._encode(reqid, route, msg)
         if (body) {
-            await this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
+            await this.socket.send(Package.encode(Package.TYPE_DATA, body))
         }
 
         return await new Promise((resolve, reject) => {
@@ -268,7 +268,7 @@ export class Session extends EventEmitter {
 
         const body = this._encode(0, route, msg)
         if (this.socket && body) {
-            await this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
+            await this.socket.send(Package.encode(Package.TYPE_DATA, body))
         }
     }
 
@@ -289,7 +289,7 @@ export class Session extends EventEmitter {
     }
 
     private processPackage(buffer: ArrayBuffer) {
-        const msgs = Protocol.Package.decode(buffer)
+        const msgs = Package.decode(buffer)
         if (!msgs) {
             if (this.socket) this.socket.close(-1, 'socket read EOF!')
             return
@@ -298,18 +298,18 @@ export class Session extends EventEmitter {
         for (let i in msgs) {
             const msg = msgs[i]
             switch (msg.type) {
-                case Protocol.PackageType.TYPE_HANDSHAKE:
+                case Package.TYPE_HANDSHAKE:
                     this.logger.warn('初始化 socket 握手协议!', {})
                     this.onHandshake(msg.body)
                     this.auth()
                     break
-                case Protocol.PackageType.TYPE_HEARTBEAT:
+                case Package.TYPE_HEARTBEAT:
                     this.onHeartbeat()
                     break
-                case Protocol.PackageType.TYPE_DATA:
+                case Package.TYPE_DATA:
                     this.onMessage(msg.body)
                     break
-                case Protocol.PackageType.TYPE_KICK:
+                case Package.TYPE_KICK:
                     this.onKickout(msg.body)
                     break
                 default:
@@ -326,7 +326,7 @@ export class Session extends EventEmitter {
             return
         }
 
-        const msg = JSON.parse(Protocol.strdecode(body))
+        const msg = JSON.parse(strdecode(body))
         if (msg.code === RES_OLD_CLIENT) {
             this.emit('error', new Error('invalid version'))
             this.logger.error('pomelo protocol has error', msg)
@@ -372,7 +372,7 @@ export class Session extends EventEmitter {
                 decoderProtos: protos.server
             })
         }
-        if (this.socket) this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HANDSHAKE_ACK))
+        if (this.socket) this.socket.send(Package.encode(Package.TYPE_HANDSHAKE_ACK))
         else this.logger.error('TYPE_HANDSHAKE_ACK failed by socket is gone!', {})
     }
 
@@ -392,7 +392,7 @@ export class Session extends EventEmitter {
         this.heartbeatId = setTimeout(() => {
             this.heartbeatId = null
             if (this.socket) {
-                this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HEARTBEAT))
+                this.socket.send(Package.encode(Package.TYPE_HEARTBEAT))
             }
             this.nextHeartbeatTimeout = Date.now() + this.heartbeatTimeout
             this.heartbeatTimeoutId = setTimeout(() => {
@@ -430,7 +430,7 @@ export class Session extends EventEmitter {
         if (!body) {
             return
         }
-        const reason = JSON.parse(Protocol.strdecode(body))
+        const reason = JSON.parse(strdecode(body))
         this.emit('kickout', reason)
     }
 
@@ -438,11 +438,11 @@ export class Session extends EventEmitter {
         if (this.clientProtos[route]) {
             msg = Protobuf.encode(route, msg)
         } else {
-            msg = Protocol.strencode(JSON.stringify(msg))
+            msg = strencode(JSON.stringify(msg))
         }
-        return Protocol.Message.encode(
+        return Message.encode(
             reqId,
-            reqId ? Protocol.MessageType.TYPE_REQUEST : Protocol.MessageType.TYPE_NOTIFY,
+            reqId ? Message.TYPE_REQUEST : Message.TYPE_NOTIFY,
             !!this.dict[route],
             this.dict[route] ? this.dict[route] : route,
             msg,
@@ -451,7 +451,7 @@ export class Session extends EventEmitter {
     }
 
     private _decode(buffer: Uint8Array) {
-        const msg = Protocol.Message.decode(buffer)
+        const msg = Message.decode(buffer)
         if (msg.id > 0) {
             msg.route = this.routeMap[msg.id]
             delete this.routeMap[msg.id]
@@ -473,7 +473,7 @@ export class Session extends EventEmitter {
             if (this.serverProtos[route]) {
                 return Protobuf.decode(route, msg.body)
             } else {
-                return JSON.parse(Protocol.strdecode(msg.body))
+                return JSON.parse(strdecode(msg.body))
             }
         }
 
