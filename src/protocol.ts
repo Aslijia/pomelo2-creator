@@ -1,5 +1,5 @@
 function alloc_buffer(n: any) {
-    return typeof window === 'undefined' ? Buffer.from(n) : Uint8Array.from(n)
+    return typeof window === 'undefined' ? new Buffer(n) : new Uint8Array(n)
 }
 export namespace Protocol {
     const PKG_HEAD_BYTES = 4
@@ -179,7 +179,7 @@ export namespace Protocol {
     export function strencode(str: string) {
         if (typeof Buffer != 'undefined' && typeof window == 'undefined') {
             // encoding defaults to 'utf8'
-            return Buffer.from(str)
+            return new Buffer(str)
         }
 
         const byteArray = alloc_buffer(str.length * 3)
