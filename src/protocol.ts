@@ -106,14 +106,7 @@ export namespace Protocol {
 
             // add route
             if (msgHasRoute(type)) {
-                //@ts-ignore
-                offset = encodeMsgRoute(
-                    compressRoute,
-                    //@ts-ignore
-                    typeof route === 'number' ? route : encodeRoute,
-                    buffer,
-                    offset
-                )
+                offset = encodeMsgRoute(compressRoute, route, buffer, offset)
             }
 
             // add body
