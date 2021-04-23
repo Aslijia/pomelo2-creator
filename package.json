@@ -1,6 +1,6 @@
 {
     "name": "pomelo2-creator",
-    "version": "1.4.11",
+    "version": "1.4.12",
     "description": "",
     "main": "./lib/index.js",
     "scripts": {

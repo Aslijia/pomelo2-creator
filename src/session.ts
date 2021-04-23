@@ -102,6 +102,7 @@ export class Session extends EventEmitter {
     protected logger: Logger
     constructor(uri: string, opts: Option) {
         super()
+
         this.logger = opts.logger || new Console()
         this.logger.trace('init pomelo', { uri, opts })
 
@@ -143,6 +144,8 @@ export class Session extends EventEmitter {
             this.retryTimer = setTimeout(this.connect.bind(this), ((this.retryCounter % 10) + 1) * 1000)
             this.retryCounter++
         })
+
+        this.on('heartbeat', this.onHeartbeat.bind(this))
     }
 
     emit(type: string, ...args: any[]) {
