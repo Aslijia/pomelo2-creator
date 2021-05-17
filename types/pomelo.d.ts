@@ -46,7 +46,7 @@ declare interface Option {
     }
 
     decodeIO?: boolean
-
+    timeout?: number
     rsa?: string
     usr?: object
     logger?: Logger

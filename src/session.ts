@@ -37,6 +37,7 @@ declare interface Option {
         getItem(key: string): any | undefined
         setItem(key: string, value: any, exipre?: number): any
     }
+    timeout?: number
     decodeIO?: boolean
     rsa?: string
     usr?: object
@@ -345,7 +346,8 @@ export class Session extends EventEmitter {
                 heartbeat: msg.sys.heartbeat
             })
             this.heartbeatInterval = msg.sys.heartbeat * 1000 // heartbeat interval
-            this.heartbeatTimeout = this.heartbeatInterval * 5 // max heartbeat timeout
+
+            this.heartbeatTimeout = this.opts.timeout || this.heartbeatInterval * 5 // max heartbeat timeout
         }
         if (msg.sys.id) {
             this.logger.debug('init session id', { id: msg.sys.id })
