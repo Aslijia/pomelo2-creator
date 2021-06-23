@@ -203,7 +203,7 @@ export class Session extends EventEmitter {
         })
 
         const protocol = this._remote.protocol.replace(':', '')
-        this.socket.connect(this._remote.href, protocol, protocol === 'wss' ? this.opts.cert : undefined)
+        this.socket.connect(this._remote.href, 'pomelo', this.opts.cert)
     }
 
     when(channel: string, event: string, listener: (...args: any[]) => void) {
