@@ -1,7 +1,8 @@
 declare enum StateEnum {
-    DISCONNECT,
-    CONNECTING,
-    READY
+    DISCONNECT = 0,
+    CONNECTED = 1,
+    CONNECTING = 3,
+    READY = 2
 }
 
 declare class Session {

@@ -163,7 +163,9 @@ export class Session extends EventEmitter {
     }
 
     get state() {
-        return this.socket && this.socket.connected ? (this.ready ? 2 : 1) : 0
+        if (this.socket && this.socket.connected) return this.ready ? 2 : 1
+        if (this.socket && this.socket.connectting) return 3
+        return 0
     }
 
     private async connect() {
