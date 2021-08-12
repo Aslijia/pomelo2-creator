@@ -265,6 +265,7 @@ export class Session extends EventEmitter {
             body,
             reqid
         })
+        this._sendmessage()
         return await new Promise((resolve, reject) => {
             this.callbacks[reqid] = { resolve, reject }
             this.routeMap[reqid] = route
@@ -277,6 +278,7 @@ export class Session extends EventEmitter {
             route,
             body
         })
+        this._sendmessage()
     }
 
     async disconnect(code: number, reason: string) {
