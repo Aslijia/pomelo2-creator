@@ -241,11 +241,11 @@ export class Session extends EventEmitter {
             return
         }
 
+        this._sending = true
         if (!this.socket) {
             await this.connect()
         }
 
-        this._sending = true
         const msg: { type: string; route: string; body: any; reqid: number } = this.messagequeue.shift()
         if (!this.socket || !msg) return (this._sending = false)
 
