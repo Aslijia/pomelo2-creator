@@ -97,6 +97,7 @@ export class Session extends EventEmitter {
     protected retryTimer: any = 0
 
     protected reqId: number = 0
+    protected ready: boolean = false
     protected callbacks: {
         [id: string]: { resolve: Function; reject: Function }
     } = {}
@@ -239,22 +240,21 @@ export class Session extends EventEmitter {
     }
 
     async _sendmessage() {
-        if (this._sending) {
-            return
-        }
+        if (this._sending) return
 
         this._sending = true
+
         if (!this.socket) {
+            if (this.retryTimer) clearTimeout(this.retryTimer)
+            this.retryTimer = undefined
             await this.connect()
         }
-
         const msg: { type: string; route: string; body: any; reqid: number } = this.messagequeue.shift()
         if (!this.socket || !msg) return (this._sending = false)
 
         const body = this._encode(msg.reqid || 0, msg.route, msg.body)
-        if (body) {
-            this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
-        }
+        if (body) this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
+
         this._sending = false
         if (this.messagequeue.length) this.emit('sendmessage')
     }
@@ -494,13 +494,10 @@ export class Session extends EventEmitter {
     }
 
     async auth() {
-        this.logger.debug('auto')
         if (this.opts.auth) {
             const response = await this.opts.auth()
-            if (response) {
-                this.emit('ready', response)
-            }
-            return response
+            this.ready = true
+            this.emit('ready', response)
         }
     }
 }
