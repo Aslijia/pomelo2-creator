@@ -162,6 +162,10 @@ export class Session extends EventEmitter {
         return super.emit(type, ...args)
     }
 
+    get state() {
+        return this.socket && this.socket.connected ? (this.ready ? 2 : 1) : 0
+    }
+
     private async connect() {
         if (this.socket && (this.socket.connectting || this.socket.connected)) {
             this.logger.warn('cant connect 2 remote sever by socket connecing', {

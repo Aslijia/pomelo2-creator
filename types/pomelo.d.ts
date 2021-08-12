@@ -1,6 +1,13 @@
+declare enum StateEnum {
+    DISCONNECT,
+    CONNECTING,
+    READY
+}
+
 declare class Session {
     readonly id: string
 
+    readonly state: StateEnum
     auth(): Promise<any | undefined>
 
     connect(): Promise<void>
