@@ -150,6 +150,8 @@ export class Session extends EventEmitter {
         })
 
         this.on('heartbeat', this.onHeartbeat.bind(this))
+
+        this.on('sendmessage', this._sendmessage.bind(this))
     }
 
     emit(type: string, ...args: any[]) {
@@ -254,7 +256,7 @@ export class Session extends EventEmitter {
             this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
         }
         this._sending = false
-        if (this.messagequeue.length) this._sendmessage()
+        if (this.messagequeue.length) this.emit('sendmessage')
     }
 
     async request(route: string, body: object) {
@@ -265,7 +267,7 @@ export class Session extends EventEmitter {
             body,
             reqid
         })
-        this._sendmessage()
+        this.emit('sendmessage')
         return await new Promise((resolve, reject) => {
             this.callbacks[reqid] = { resolve, reject }
             this.routeMap[reqid] = route
@@ -278,7 +280,7 @@ export class Session extends EventEmitter {
             route,
             body
         })
-        this._sendmessage()
+        this.emit('sendmessage')
     }
 
     async disconnect(code: number, reason: string) {
