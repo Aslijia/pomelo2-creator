@@ -260,7 +260,7 @@ export class Session extends EventEmitter {
     }
 
     async request(route: string, body: object) {
-        const reqid = this.reqId++
+        const reqid = ++this.reqId
         this.messagequeue.push({
             type: 'request',
             route,
