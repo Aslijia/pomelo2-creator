@@ -101,6 +101,9 @@ export class Session extends EventEmitter {
         [id: string]: { resolve: Function; reject: Function }
     } = {}
     protected logger: Logger
+
+    messagequeue: any[] = []
+    _sending: boolean = false
     constructor(uri: string, opts: Option) {
         super()
 
@@ -233,47 +236,47 @@ export class Session extends EventEmitter {
         })
     }
 
-    async request(route: string, msg: object) {
-        this.logger.trace('request', { route, msg, reqId: this.reqId++ })
+    async _sendmessage() {
+        if (this._sending) {
+            return
+        }
+
         if (!this.socket) {
             await this.connect()
         }
 
-        if (!this.socket) {
-            return Promise.reject(new Error('socket invalid status!'))
-        }
+        this._sending = true
+        const msg: { type: string; route: string; body: any; reqid: number } = this.messagequeue.shift()
+        if (!this.socket || !msg) return (this._sending = false)
 
-        if (this.socket.connectting) {
-            await this.asyncEvent('ready')
-        }
-
-        const reqid = this.reqId
-
-        const body = this._encode(reqid, route, msg)
+        const body = this._encode(msg.reqid || 0, msg.route, msg.body)
         if (body) {
-            await this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
+            this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
         }
+        this._sending = false
+        if (this.messagequeue.length) this._sendmessage()
+    }
 
+    async request(route: string, body: object) {
+        const reqid = this.reqId++
+        this.messagequeue.push({
+            type: 'request',
+            route,
+            body,
+            reqid
+        })
         return await new Promise((resolve, reject) => {
             this.callbacks[reqid] = { resolve, reject }
             this.routeMap[reqid] = route
         })
     }
 
-    async notify(route: string, msg: object) {
-        this.logger.trace('notify', { route, msg })
-        if (!this.socket) {
-            await this.connect()
-        }
-
-        if (this.socket && this.socket.connectting) {
-            await this.asyncEvent('ready')
-        }
-
-        const body = this._encode(0, route, msg)
-        if (this.socket && body) {
-            await this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_DATA, body))
-        }
+    async notify(route: string, body: object) {
+        this.messagequeue.push({
+            type: 'notify',
+            route,
+            body
+        })
     }
 
     async disconnect(code: number, reason: string) {

@@ -1,6 +1,6 @@
 {
     "name": "pomelo2-creator",
-    "version": "1.4.15",
+    "version": "1.4.16",
     "description": "",
     "main": "./lib/index.js",
     "scripts": {
@@ -28,6 +28,7 @@
     "types": "./types/pomelo.d.ts",
     "devDependencies": {
         "@types/events": "^3.0.0",
+        "@types/node": "^16.6.0",
         "@types/url-parse": "^1.4.3"
     }
 }
