@@ -20,6 +20,9 @@ declare class Session {
     when(channel: string, event: string, listener: (...args: any[]) => void): void
     cleanup(channel?: string): void
 
+    pause(): void
+    resume(): void
+
     on(event: 'error', listener: (...args: any[]) => void): void
     on(event: 'ready', listener: (...args: any[]) => void): void
     on(event: 'disconnect', listener: (...args: any[]) => void): void

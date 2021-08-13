@@ -83,7 +83,6 @@ export class Session extends EventEmitter {
 
     private heartbeatInterval: number = 0
     private heartbeatTimeout: number = 0
-    private nextHeartbeatTimeout: number = 0
 
     private heartbeatTimeoutId: any = 0
     private heartbeatId: any = 0
@@ -105,6 +104,8 @@ export class Session extends EventEmitter {
 
     messagequeue: any[] = []
     _sending: boolean = false
+
+    _pause: number = 0
     constructor(uri: string, opts: Option) {
         super()
 
@@ -166,6 +167,18 @@ export class Session extends EventEmitter {
         if (this.socket && this.socket.connected) return this.ready ? 2 : 1
         if (this.socket && this.socket.connectting) return 3
         return 0
+    }
+
+    public pause() {
+        this._pause = Date.now()
+    }
+
+    public resume() {
+        if (this.opts.timeout && Date.now() - this._pause >= this.opts.timeout) {
+            this.disconnect(-1, 'timeout')
+        } else {
+            this.onHeartbeat()
+        }
     }
 
     private async connect() {
@@ -247,9 +260,7 @@ export class Session extends EventEmitter {
 
     async _sendmessage() {
         if (this._sending) return
-
         this._sending = true
-
         if (!this.socket) {
             if (this.retryTimer) clearTimeout(this.retryTimer)
             this.retryTimer = undefined
@@ -265,7 +276,7 @@ export class Session extends EventEmitter {
         if (this.messagequeue.length) this.emit('sendmessage')
     }
 
-    async request(route: string, body: object) {
+    request(route: string, body: object) {
         const reqid = ++this.reqId
         this.messagequeue.push({
             type: 'request',
@@ -273,8 +284,9 @@ export class Session extends EventEmitter {
             body,
             reqid
         })
+
         this.emit('sendmessage')
-        return await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this.callbacks[reqid] = { resolve, reject }
             this.routeMap[reqid] = route
         })
@@ -394,15 +406,21 @@ export class Session extends EventEmitter {
         else this.logger.error('TYPE_HANDSHAKE_ACK failed by socket is gone!', {})
     }
 
+    /**
+     * 服务器返回心跳消息
+     * @returns
+     */
     private onHeartbeat() {
         this.logger.trace('heartbeat', {
             heartbeatId: this.heartbeatId,
             heartbeatInterval: this.heartbeatInterval
         })
+
         if (!this.heartbeatInterval || this.heartbeatId) {
             return
         }
 
+        // 取消超时监听
         if (this.heartbeatTimeoutId) {
             clearTimeout(this.heartbeatTimeoutId)
         }
@@ -412,9 +430,8 @@ export class Session extends EventEmitter {
             if (this.socket) {
                 this.socket.send(Protocol.Package.encode(Protocol.PackageType.TYPE_HEARTBEAT))
             }
-            this.nextHeartbeatTimeout = Date.now() + this.heartbeatTimeout
             this.heartbeatTimeoutId = setTimeout(() => {
-                if (this.socket) this.socket.close(-1, 'heartbeat timeout!')
+                this.disconnect(-1, 'heartbeat timeount')
             }, this.heartbeatTimeout)
         }, this.heartbeatInterval)
     }
