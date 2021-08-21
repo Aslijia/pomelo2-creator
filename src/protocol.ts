@@ -211,7 +211,7 @@ export namespace Protocol {
         }
 
         const bytes = alloc_buffer(buffer)
-        const array = []
+        let str = ''
         let offset = 0
         let charCode = 0
         let end = bytes.length
@@ -226,9 +226,9 @@ export namespace Protocol {
                 charCode = ((bytes[offset] & 0x0f) << 12) + ((bytes[offset + 1] & 0x3f) << 6) + (bytes[offset + 2] & 0x3f)
                 offset += 3
             }
-            array.push(charCode)
+            str += String.fromCharCode(charCode)
         }
-        return String.fromCharCode.apply(null, array)
+        return str
     }
 
     function copyArray(dest: Uint8Array, doffset: number, src: Uint8Array, soffset: number, length: number) {
