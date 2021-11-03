@@ -110,6 +110,7 @@ export class Session extends EventEmitter {
         super()
 
         this.logger = opts.logger || new Console()
+
         this.logger.trace('init pomelo', { uri, opts })
 
         this._remote = new URLParse(uri)
@@ -350,6 +351,7 @@ export class Session extends EventEmitter {
 
     private onHandshake(body?: Uint8Array | null) {
         this.logger.trace('pomelo 握手协议', { size: body ? body.length : 0 })
+
         if (!body) {
             this.logger.fatal('handshake failed', {})
             return
@@ -518,7 +520,9 @@ export class Session extends EventEmitter {
 
     async auth() {
         if (this.opts.auth) {
-            const response = await this.opts.auth()
+            const response = await this.opts.auth().catch((error: Error) => {
+                this.logger.fatal('auth function crash', { error })
+            })
             this.ready = true
             this.emit('ready', response)
         }
