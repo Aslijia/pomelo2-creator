@@ -181,7 +181,7 @@ export namespace Protocol {
             // encoding defaults to 'utf8'
             return new Buffer(str)
         }
-
+        str = encodeURI(str)
         const byteArray = alloc_buffer(str.length * 3)
         let offset = 0
         for (let i = 0; i < str.length; i++) {
@@ -207,7 +207,7 @@ export namespace Protocol {
     export function strdecode(buffer: Uint8Array) {
         if (typeof Buffer != 'undefined' && typeof window == 'undefined') {
             // encoding defaults to 'utf8'
-            return buffer.toString()
+            return decodeURI(buffer.toString())
         }
 
         const bytes = alloc_buffer(buffer)
@@ -228,7 +228,7 @@ export namespace Protocol {
             }
             str += String.fromCharCode(charCode)
         }
-        return str
+        return decodeURI(str)
     }
 
     function copyArray(dest: Uint8Array, doffset: number, src: Uint8Array, soffset: number, length: number) {
